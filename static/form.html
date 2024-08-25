@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFHL Data Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .error {
+            color: red;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        select,
+        button {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 100%;
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>BFHL Data Processor</h1>
+
+        <!-- Textarea for JSON input -->
+        <label for="jsonInput">Enter JSON:</label>
+        <textarea id="jsonInput" placeholder='{"data": ["A", "1", "B", "c", "2", "d", "E", "3", "f"]}'></textarea>
+
+        <!-- Button to submit JSON data -->
+        <button onclick="submitData()">Submit</button>
+
+        <!-- Error message -->
+        <div id="errorMessage" class="error"></div>
+
+        <!-- Div to show response -->
+        <h3>Response:</h3>
+        <pre id="response"></pre>
+
+        <!-- Dropdown to filter response -->
+        <label for="filterSelect">Filter Response:</label>
+        <select id="filterSelect" multiple>
+            <option value="numbers">Numbers</option>
+            <option value="alphabets">Alphabets</option>
+            <option value="highest_lowercase_alphabet">Highest Lowercase Alphabet</option>
+        </select>
+        <button onclick="filterResponse()">Filter</button>
+
+        <!-- Div to show filtered response -->
+        <h3>Filtered Response:</h3>
+        <pre id="filteredResponse"></pre>
+    </div>
+
+    <script>
+        // Function to submit JSON data to the backend
+        async function submitData() {
+            const input = document.getElementById('jsonInput').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const responseDiv = document.getElementById('response');
+
+            errorMessage.textContent = '';
+            responseDiv.textContent = '';
+
+
+            try {
+                // Parse input JSON
+                const jsonData = JSON.parse(input);
+                const response = await fetch('http://localhost:8080/bfhl', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData),
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                // Display response
+                const responseData = await response.json();
+                responseDiv.textContent = JSON.stringify(responseData, null, 2);
+                window.responseData = responseData; // Store for filtering
+            } catch (error) {
+                errorMessage.textContent = 'Invalid JSON or server error: ' + error.message;
+            }
+        }
+
+        // Function to filter and show the response based on selected options
+        function filterResponse() {
+            const selectedOptions = Array.from(document.getElementById('filterSelect').selectedOptions)
+                .map(option => option.value);
+            const filteredResponse = {};
+
+            if (window.responseData) {
+                selectedOptions.forEach(option => {
+                    if (window.responseData[option]) {
+                        filteredResponse[option] = window.responseData[option];
+                    }
+                });
+                document.getElementById('filteredResponse').textContent = JSON.stringify(filteredResponse, null, 2);
+            }
+        }
+    </script>
+</body>
+
+</html>
